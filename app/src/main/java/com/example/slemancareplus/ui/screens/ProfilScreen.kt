@@ -1,26 +1,25 @@
 package com.example.slemancareplus.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.slemancareplus.ui.viewmodel.ProfileViewModel
 
 @Composable
-fun ProfilScreen(
-    navController: NavController
+fun ProfileScreen(
+    navController: NavController,
+    viewModel: ProfileViewModel = viewModel()
 ) {
+    val profile = viewModel.profile
 
-    // DATA STATIS (NANTI BISA DARI DATABASE / API)
-    val nama = "Siti Aminah"
-    val nik = "3404123456789012"
-    val noHp = "081234567890"
-    val alamat = "Jl. Kaliurang, Sleman"
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile(userId = "1") // nanti ambil dari session
+    }
 
     Column(
         modifier = Modifier
@@ -28,78 +27,32 @@ fun ProfilScreen(
             .padding(16.dp)
     ) {
 
-        // JUDUL
         Text(
-            text = "Profil Pengguna",
+            text = "Profil",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        ProfilItem(label = "Nama Lengkap", value = nama)
-        ProfilItem(label = "NIK", value = nik)
-        ProfilItem(label = "Nomor HP", value = noHp)
-        ProfilItem(label = "Alamat", value = alamat)
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // TOMBOL EDIT PROFIL
-        Button(
-            onClick = {
-                // navController.navigate(Routes.EDIT_PROFIL)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+        if (profile != null) {
+            OutlinedTextField(
+                value = profile.nama,
+                onValueChange = {},
+                label = { Text("Nama") },
+                modifier = Modifier.fillMaxWidth()
             )
-        ) {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Edit Profil",
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Edit Profil",
-                color = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        } else {
+            CircularProgressIndicator()
         }
-    }
-}
 
-@Composable
-fun ProfilItem(
-    label: String,
-    value: String
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp)
-    ) {
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Text(
-            text = value,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        HorizontalDivider(
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-        )
+        Button(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Simpan")
+        }
     }
 }

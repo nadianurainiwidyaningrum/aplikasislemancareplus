@@ -9,12 +9,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.slemancareplus.navigation.Routes
+import com.example.slemancareplus.ui.viewmodel.PengajuanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PengajuanScreen(navController: NavController) {
+fun PengajuanScreen(
+    navController: NavController,
+    viewModel: PengajuanViewModel = viewModel()
+) {
 
     var nik by remember { mutableStateOf("") }
     var nama by remember { mutableStateOf("") }
@@ -62,7 +67,7 @@ fun PengajuanScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // FORM INPUT
+        // NIK
         OutlinedTextField(
             value = nik,
             onValueChange = { nik = it; error = null },
@@ -73,6 +78,7 @@ fun PengajuanScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // NAMA
         OutlinedTextField(
             value = nama,
             onValueChange = { nama = it; error = null },
@@ -83,6 +89,7 @@ fun PengajuanScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // ALAMAT
         OutlinedTextField(
             value = alamat,
             onValueChange = { alamat = it; error = null },
@@ -129,6 +136,7 @@ fun PengajuanScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // ALASAN
         OutlinedTextField(
             value = alasan,
             onValueChange = { alasan = it; error = null },
@@ -160,10 +168,20 @@ fun PengajuanScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ERROR
-        if (error != null) {
+        // ERROR LOCAL
+        error?.let {
             Text(
-                text = error!!,
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // ERROR DARI API
+        viewModel.errorMessage?.let {
+            Text(
+                text = it,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -176,17 +194,30 @@ fun PengajuanScreen(navController: NavController) {
                 if (!formValid) {
                     error = "Semua data wajib diisi termasuk dokumen pendukung"
                 } else {
-                    navController.navigate("${Routes.THANKYOU}/pengajuan")
+                    viewModel.kirimPengajuan(
+                        nik = nik,
+                        nama = nama,
+                        alamat = alamat,
+                        jenisBantuan = jenisBantuan,
+                        alasan = alasan,
+                        dokumenUri = dokumen.toString()
+                    ) {
+                        navController.navigate("${Routes.THANKYOU}/pengajuan")
+                    }
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
         ) {
-            Text(
-                text = "Kirim Pengajuan",
-                fontWeight = FontWeight.Bold
-            )
+            if (viewModel.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Kirim Pengajuan", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

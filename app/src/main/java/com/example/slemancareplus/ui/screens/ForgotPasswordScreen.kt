@@ -1,26 +1,39 @@
 package com.example.slemancareplus.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.slemancareplus.navigation.Routes
+import com.example.slemancareplus.ui.viewmodel.ForgotPasswordViewModel
 
 @Composable
-fun ForgotPasswordScreen(navController: NavController) {
+fun ForgotPasswordScreen(
+    navController: NavController,
+    viewModel: ForgotPasswordViewModel = viewModel()
+) {
 
     var phone by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf<String?>(null) }
-    var method by remember { mutableStateOf("WA") }
+
+    val isLoading = viewModel.isLoading
+    val message = viewModel.message
+    val success = viewModel.isSuccess
+
+    // ✅ Jika sukses → lanjut ke OTP sambil kirim username
+    LaunchedEffect(success) {
+        if (success) {
+            navController.navigate(Routes.OTP + "/$phone")
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -29,24 +42,23 @@ fun ForgotPasswordScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "LUPA KATA SANDI",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            text = "Lupa Kata Sandi",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Pilih Metode Pengiriman OTP",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
+            text = "Masukkan nomor telepon atau username yang terdaftar",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
             value = phone,
@@ -55,9 +67,9 @@ fun ForgotPasswordScreen(navController: NavController) {
                 phoneError = null
             },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Nomor Telepon") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            label = { Text("Nomor Telepon / Username") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             isError = phoneError != null
         )
 
@@ -70,77 +82,50 @@ fun ForgotPasswordScreen(navController: NavController) {
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                MethodButton("WhatsApp", method == "WA") { method = "WA" }
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                MethodButton("SMS", method == "SMS") { method = "SMS" }
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                MethodButton("Telepon", method == "CALL") { method = "CALL" }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 when {
-                    phone.isEmpty() -> phoneError = "Nomor tidak boleh kosong"
-                    phone.length < 10 -> phoneError = "Nomor tidak valid"
-                    else -> navController.navigate(Routes.OTP)
+                    phone.isBlank() ->
+                        phoneError = "Tidak boleh kosong"
+
+                    phone.length < 8 ->
+                        phoneError = "Data tidak valid"
+
+                    else ->
+                        viewModel.sendOtp(phone)
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
+            enabled = !isLoading
         ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = "Kirim OTP",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        if (message != null) {
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "KIRIM OTP",
-                color = Color.White,
-                fontWeight = FontWeight.Bold
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (success)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.error
             )
         }
-    }
-}
-
-@Composable
-fun MethodButton(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selected)
-                MaterialTheme.colorScheme.primary
-            else
-                Color.White,
-            contentColor = if (selected)
-                Color.White
-            else
-                MaterialTheme.colorScheme.primary
-        ),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.primary
-        )
-    ) {
-        Text(
-            text = text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
     }
 }

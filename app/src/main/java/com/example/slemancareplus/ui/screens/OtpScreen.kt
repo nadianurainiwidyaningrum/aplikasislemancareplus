@@ -1,6 +1,5 @@
 package com.example.slemancareplus.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -11,25 +10,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.slemancareplus.navigation.Routes
-import kotlinx.coroutines.delay
+import com.example.slemancareplus.ui.viewmodel.OtpViewModel
 
 @Composable
-fun OtpScreen(navController: NavController) {
+fun OtpScreen(
+    navController: NavController,
+    username: String,
+    viewModel: OtpViewModel = viewModel()
+) {
 
     val otp = remember { mutableStateListOf("", "", "", "", "") }
-    var timeLeft by remember { mutableIntStateOf(60) }
-    var canResend by remember { mutableStateOf(false) }
-    var otpError by remember { mutableStateOf(false) }
 
-    LaunchedEffect(timeLeft) {
-        if (timeLeft > 0) {
-            delay(1000L)
-            timeLeft--
-        } else {
-            canResend = true
+    val isLoading = viewModel.isLoading
+    val message = viewModel.message
+    val success = viewModel.isSuccess
+
+    // ✅ Jika OTP valid → ke reset password
+    LaunchedEffect(success) {
+        if (success) {
+            navController.navigate(Routes.RESET + "/$username") {
+                popUpTo(Routes.OTP + "/{username}") { inclusive = true }
+            }
         }
     }
 
@@ -40,41 +44,24 @@ fun OtpScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(modifier = Modifier.height(40.dp))
-
         Text(
-            text = "VERIFIKASI OTP",
+            text = "Verifikasi OTP",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = "Masukkan kode OTP yang dikirim",
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // OTP INPUT
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             otp.forEachIndexed { index, value ->
                 OutlinedTextField(
                     value = value,
                     onValueChange = {
-                        if (it.length <= 1) {
+                        if (it.length <= 1 && it.all { c -> c.isDigit() }) {
                             otp[index] = it
-                            otpError = false
                         }
                     },
-                    modifier = Modifier
-                        .width(50.dp)
-                        .height(56.dp),
+                    modifier = Modifier.width(48.dp),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = LocalTextStyle.current.copy(
@@ -85,55 +72,38 @@ fun OtpScreen(navController: NavController) {
             }
         }
 
-        if (otpError) {
-            Spacer(modifier = Modifier.height(8.dp))
+        if (message != null) {
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Kode OTP salah",
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 12.sp
+                text = message,
+                color = if (success)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // TIMER
-        Text(
-            text = if (canResend)
-                "Kirim ulang OTP"
-            else
-                "Kirim ulang dalam $timeLeft detik",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (canResend)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-            modifier = Modifier.clickable(enabled = canResend) {
-                timeLeft = 60
-                canResend = false
-            }
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // BUTTON VERIFIKASI
         Button(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading,
             onClick = {
                 val inputOtp = otp.joinToString("")
-                when {
-                    inputOtp.length < 5 -> otpError = true
-                    inputOtp != "22533" -> otpError = true // OTP dummy
-                    else -> navController.navigate(Routes.RESET)
+                if (inputOtp.length == 5) {
+                    viewModel.verifyOtp(username, inputOtp)
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
+            }
         ) {
-            Text(
-                text = "VERIFIKASI",
-                fontWeight = FontWeight.Bold
-            )
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("VERIFIKASI")
+            }
         }
     }
 }

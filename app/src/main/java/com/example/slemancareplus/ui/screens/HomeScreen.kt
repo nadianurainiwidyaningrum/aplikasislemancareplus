@@ -1,6 +1,5 @@
 package com.example.slemancareplus.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -14,92 +13,86 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.slemancareplus.navigation.Routes
 
+/* =======================
+   HOME SCREEN
+   ======================= */
+
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavHostController) {
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
 
-        /* ================= HEADER ================= */
+        /* ===== HEADER ===== */
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "BERANDA",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary
+                text = "Beranda",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
 
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Profil",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable {
-                        navController.navigate(Routes.PROFIL)
-                    }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        /* ================= WELCOME ================= */
-        Text(
-            text = "Selamat datang!",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Text(
-            text = "Pantau bantuan sosialmu di sini.\n" +
-                    "Laporkan jika menemukan penerima bansos\n" +
-                    "yang tidak tepat sasaran.",
-            fontSize = 12.sp,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        /* ================= MENU CARD ================= */
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE3F2FD)
-            )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                MenuGrid(navController)
+            IconButton(
+                onClick = { navController.navigate(Routes.PROFIL) }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Profil"
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        /* ================= LAPORAN CARD ================= */
+        /* ===== WELCOME ===== */
+        Text(
+            text = "Selamat Datang",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = "Pantau, kelola, dan laporkan bantuan sosial dengan mudah melalui SlemanCare Plus.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        /* ===== MENU GRID ===== */
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFBBDEFB)
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            MenuGrid(navController)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        /* ===== INFO CARD ===== */
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
             )
         ) {
             Row(
@@ -109,56 +102,60 @@ fun HomeScreen(navController: NavController) {
                 Icon(
                     imageVector = Icons.Default.Campaign,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(32.dp)
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = "LAPORKAN KEPADA KAMI\n" +
-                            "JIKA MENEMUKAN OKNUM ATAU\n" +
-                            "PENERIMA YANG SALAH SASARAN",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    text = "Laporkan apabila terdapat penerima bantuan yang tidak sesuai dengan ketentuan.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }
     }
 }
 
-/* ================= MENU GRID ================= */
+/* =======================
+   MENU GRID
+   ======================= */
 
 @Composable
-fun MenuGrid(navController: NavController) {
+fun MenuGrid(navController: NavHostController) {
 
-    val menus = listOf(
-        Triple("Cari Data", Icons.Default.Search, Routes.CARI_DATA),
-        Triple("Pengajuan", Icons.Default.Upload, Routes.PENGAJUAN),
-        Triple("Pengaduan", Icons.Default.Report, Routes.PENGADUAN),
-        Triple("Riwayat", Icons.Default.History, Routes.RIWAYAT),
-        Triple("Agen Sekitar", Icons.Default.LocationOn, Routes.AGEN_SEKITAR),
-        Triple("Panduan", Icons.AutoMirrored.Filled.MenuBook, Routes.PANDUAN)
+    val menuList = listOf(
+        MenuData("Cari Data", Icons.Default.Search, Routes.CARI_DATA),
+        MenuData("Pengajuan", Icons.Default.Upload, Routes.PENGAJUAN),
+        MenuData("Pengaduan", Icons.Default.Report, Routes.PENGADUAN),
+        MenuData("Riwayat", Icons.Default.History, Routes.RIWAYAT),
+        MenuData("Agen\nTerdekat", Icons.Default.LocationOn, Routes.AGEN),
+        MenuData("Informasi", Icons.Default.Info, Routes.INFORMASI),
+        MenuData("Pemberdayaan", Icons.Default.Groups, Routes.PEMBERDAYAAN),
+        MenuData("Aksesibilitas", Icons.Default.Accessibility, Routes.AKSESIBILITAS),
+        MenuData("Pusat\nBantuan", Icons.AutoMirrored.Filled.MenuBook, Routes.PUSAT_BANTUAN)
     )
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        items(menus) { menu ->
+        items(menuList) { menu ->
             MenuItem(
-                title = menu.first,
-                icon = menu.second
-            ) {
-                navController.navigate(menu.third)
-            }
+                title = menu.title,
+                icon = menu.icon,
+                onClick = { navController.navigate(menu.route) }
+            )
         }
     }
 }
 
-/* ================= MENU ITEM ================= */
+/* =======================
+   MENU ITEM
+   ======================= */
 
 @Composable
 fun MenuItem(
@@ -166,35 +163,48 @@ fun MenuItem(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Column(
+    Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(110.dp) // 🔑 SEMUA KOTAK SAMA TINGGI
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
-            .clickable { onClick() }
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
 
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(32.dp)
-        )
+            Spacer(modifier = Modifier.height(10.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = title,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            lineHeight = 14.sp,
-            color = Color.Black
-        )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
+
+/* =======================
+   DATA
+   ======================= */
+
+data class MenuData(
+    val title: String,
+    val icon: ImageVector,
+    val route: String
+)

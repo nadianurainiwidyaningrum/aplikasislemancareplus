@@ -11,9 +11,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.slemancareplus.navigation.Routes
+import com.example.slemancareplus.ui.viewmodel.PengaduanViewModel
 
 @Composable
-fun PengaduanScreen(navController: NavController) {
+fun PengaduanScreen(
+    navController: NavController,
+    viewModel: PengaduanViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
 
     var namaTerduga by remember { mutableStateOf("") }
     var dukuh by remember { mutableStateOf("") }
@@ -21,12 +25,8 @@ fun PengaduanScreen(navController: NavController) {
     var noHp by remember { mutableStateOf("") }
     var kronologi by remember { mutableStateOf("") }
 
-    var bukti by remember { mutableStateOf<Uri?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri -> bukti = uri }
+    val loading by viewModel.loading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     val formValid =
         namaTerduga.isNotBlank() &&
@@ -41,60 +41,53 @@ fun PengaduanScreen(navController: NavController) {
             .padding(16.dp)
     ) {
 
-        // JUDUL
         Text(
             text = "Pengaduan",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // FORM
         OutlinedTextField(
             value = namaTerduga,
-            onValueChange = { namaTerduga = it; error = null },
+            onValueChange = { namaTerduga = it },
             label = { Text("Nama Terduga *") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = dukuh,
-            onValueChange = { dukuh = it; error = null },
+            onValueChange = { dukuh = it },
             label = { Text("Nama Dukuh Terduga *") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = alamat,
-            onValueChange = { alamat = it; error = null },
+            onValueChange = { alamat = it },
             label = { Text("Alamat *") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = noHp,
-            onValueChange = { noHp = it; error = null },
+            onValueChange = { noHp = it },
             label = { Text("No HP *") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = kronologi,
-            onValueChange = { kronologi = it; error = null },
+            onValueChange = { kronologi = it },
             label = { Text("Kronologi Kejadian *") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -103,61 +96,29 @@ fun PengaduanScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // UPLOAD BUKTI
-        Button(
-            onClick = { launcher.launch("image/*") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            )
-        ) {
-            Text(
-                text = if (bukti == null)
-                    "Upload Bukti (Opsional)"
-                else
-                    "Bukti Terpilih",
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "* Bukti bersifat opsional",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ERROR
         if (error != null) {
-            Text(
-                text = error!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
+            Text(error!!, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // SUBMIT
         Button(
             onClick = {
-                if (!formValid) {
-                    error = "Semua data wajib diisi dengan benar"
-                } else {
-                    navController.navigate("${Routes.THANKYOU}/pengaduan")
+                if (formValid) {
+                    viewModel.kirimPengaduan(
+                        namaTerduga,
+                        dukuh,
+                        alamat,
+                        noHp,
+                        kronologi
+                    ) {
+                        navController.navigate("${Routes.THANKYOU}/pengaduan")
+                    }
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !loading
         ) {
-            Text(
-                text = "Kirim Pengaduan",
-                fontWeight = FontWeight.Bold
-            )
+            Text(if (loading) "Mengirim..." else "Kirim Pengaduan")
         }
     }
 }

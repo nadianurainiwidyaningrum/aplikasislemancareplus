@@ -1,139 +1,184 @@
-package com.example.slemancareplus.ui.screens
+package com.example.slemancareplus.ui.screens.agen
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import kotlin.math.*
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.slemancareplus.ui.viewmodel.AgenViewModel
+import com.example.slemancareplus.ui.viewmodel.AgenWithDistance
+import com.google.android.gms.location.LocationServices
 
-/* DATA MODEL AGEN */
-data class Agen(
-    val nama: String,
-    val alamat: String,
-    val lat: Double,
-    val lon: Double
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AgenScreen(navController: NavController) {
+fun AgenScreen() {
+
     val context = LocalContext.current
+    val viewModel: AgenViewModel = viewModel()
+    val agenList by viewModel.agenList.collectAsState(initial = emptyList())
 
-    // LOKASI USER (DUMMY – SLEMAN)
-    val userLat = -7.71556
-    val userLon = 110.35556
+    val fusedLocationClient =
+        LocationServices.getFusedLocationProviderClient(context)
 
-    // DATA AGEN (STATIS)
-    val agenList = listOf(
-        Agen("Agen Sleman Utara", "Jl. Kaliurang Km 10, Sleman", -7.7045, 110.3612),
-        Agen("Agen Sleman Tengah", "Jl. Magelang, Sleman", -7.7496, 110.3552),
-        Agen("Agen Sleman Selatan", "Jl. Godean, Sleman", -7.7812, 110.3278)
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
-    ) {
-
-        Text(
-            text = "Agen di Sekitar Anda",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyColumn {
-            items(agenList) { agen ->
-                val jarak = hitungJarak(userLat, userLon, agen.lat, agen.lon)
-
-                AgenCard(
-                    agen = agen,
-                    jarak = jarak,
-                    onClick = {
-                        val uri = Uri.parse(
-                            "geo:${agen.lat},${agen.lon}?q=${agen.lat},${agen.lon}(${agen.nama})"
-                        )
-                        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                            setPackage("com.google.android.apps.maps")
-                        }
-                        context.startActivity(intent)
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                    loc?.let {
+                        viewModel.loadAgen(it.latitude, it.longitude)
                     }
-                )
+                }
+            }
+        }
+
+    LaunchedEffect(Unit) {
+        if (
+            ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                loc?.let {
+                    viewModel.loadAgen(it.latitude, it.longitude)
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Agen di Sekitar") }
+            )
+        }
+    ) { padding ->
+
+        if (agenList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(agenList) { item ->
+                    AgenCard(item)
+                }
             }
         }
     }
 }
 
 @Composable
-fun AgenCard(
-    agen: Agen,
-    jarak: Double,
-    onClick: () -> Unit
-) {
+private fun AgenCard(item: com.example.slemancareplus.ui.viewmodel.AgenWithDistance) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .clickable {
+                val uri = Uri.parse(
+                    "https://www.google.com/maps/search/?api=1&query=${item.agen.latitude},${item.agen.longitude}"
+                )
+                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+            }
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
             Text(
-                text = agen.nama,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = item.agen.nama_agen,
+                style = MaterialTheme.typography.titleMedium
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = agen.alamat,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                text = item.agen.alamat,
+                style = MaterialTheme.typography.bodyMedium
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Jarak: ${"%.2f".format(jarak)} km",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.secondary
+                text = "Jarak: %.2f km".format(item.jarakKm),
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
+@Composable
+private fun AgenCardProfessional(item: AgenWithDistance) {
 
-/* RUMUS JARAK (HAVERSINE)*/
-fun hitungJarak(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val radiusBumi = 6371.0 // KM
-    val dLat = (lat2 - lat1).toRadians()
-    val dLon = (lon2 - lon1).toRadians()
+    val context = LocalContext.current
 
-    val a = sin(dLat / 2).pow(2.0) +
-            cos(lat1.toRadians()) * cos(lat2.toRadians()) *
-            sin(dLon / 2).pow(2.0)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                val uri = Uri.parse(
+                    "https://www.google.com/maps/search/?api=1&query=${item.agen.latitude},${item.agen.longitude}"
+                )
+                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+            },
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
 
-    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return radiusBumi * c
+            // Nama Agen
+            Text(
+                text = item.agen.nama_agen,
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Alamat
+            Text(
+                text = item.agen.alamat,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            HorizontalDivider()
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Jarak
+            Text(
+                text = "Jarak: %.2f km".format(item.jarakKm),
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
 }
-
-fun Double.toRadians() = this * PI / 180

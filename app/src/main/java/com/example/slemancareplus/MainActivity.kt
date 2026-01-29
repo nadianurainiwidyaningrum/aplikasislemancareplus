@@ -8,14 +8,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.navigation.compose.rememberNavController
 import com.example.slemancareplus.navigation.AppNavGraph
-import com.example.slemancareplus.ui.theme.SlemanCarePlusTheme
+import com.example.slemancareplus.ui.theme.SlemancareplusTheme
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            SlemanCarePlusTheme {
-                Surface(color = MaterialTheme.colorScheme.background) {
+            SlemancareplusTheme {
+                Surface(
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     val navController = rememberNavController()
                     AppNavGraph(navController)
                 }
